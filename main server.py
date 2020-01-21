@@ -53,7 +53,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
-
+        i=0
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -67,6 +67,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
                 
+                i=i+1
+                if i%50 == 0:
+                    print(i)                            
                 inputs = inputs.cuda()
                 labels = labels.cuda()
 
@@ -94,7 +97,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
-            torch.save(model.state_dict(), "checkpoints/epoch{:f}".format(epoch))
+            torch.save(model.state_dict(), "checkpoints/epoch{:d}.pth".format(epoch))
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
