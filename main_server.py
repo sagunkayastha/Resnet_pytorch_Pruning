@@ -130,7 +130,7 @@ num_ftrs = model_ft.fc.in_features
 # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
 model_ft.fc = nn.Linear(num_ftrs, 31)
 
-model_ft.load_state_dict(torch.load("checkpoints/epoch8.pth")
+model_ft.load_state_dict(torch.load("checkpoints/epoch8.pth"))
 print('model_loaded')
 model_ft = model_ft.cuda()
 
