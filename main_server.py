@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import time
 import os
 import copy
-
+import sys
 # plt.ion()   # interactive mode
 
 # Just normalization for validation
@@ -34,7 +34,7 @@ data_dir = '../dataset2/'
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x])
                   for x in ['train', 'val']}
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4,
+dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=64,
                                              shuffle=True, num_workers=4)
               for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -53,7 +53,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
-
+        i=0
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -67,6 +67,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
                 
+                i=i+1
+                                            
                 inputs = inputs.cuda()
                 labels = labels.cuda()
 
@@ -89,12 +91,19 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+                if i%10 == 0:
+                    # print(i)
+                    acc_p = torch.sum(preds == labels.data).double() / 64
+                    sys.stdout.write("Accuracy in epoch : %d - Step : %d  is = %f  \r" % (epoch, i, acc_p) )
+                    sys.stdout.flush()
+                    
+                    # print('Acc: {:.4f}'.format(acc_p))
             if phase == 'train':
                 scheduler.step()
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
-            torch.save(model.state_dict(), "checkpoints/epoch{:f}".format(epoch))
+            
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
@@ -102,6 +111,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+                torch.save(model.state_dict(), "checkpoints/epoch{:d}.pth".format(epoch))
 
         
 
