@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import time
 import os
 import copy
-
+import sys
 # plt.ion()   # interactive mode
 
 # Just normalization for validation
@@ -68,8 +68,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             for inputs, labels in dataloaders[phase]:
                 
                 i=i+1
-                if i%50 == 0:
-                    print(i)                            
+                                            
                 inputs = inputs.cuda()
                 labels = labels.cuda()
 
@@ -83,7 +82,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
-                    print('a')
+                    
                     # backward + optimize only if in training phase
                     if phase == 'train':
                         loss.backward()
@@ -92,12 +91,19 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+                if i%10 == 0:
+                    # print(i)
+                    acc_p = torch.sum(preds == labels.data).double() / 64
+                    sys.stdout.write("Accuracy in epoch : %d - Step : %d  is = %f  \r" % (epoch, i, acc_p) )
+                    sys.stdout.flush()
+                    
+                    # print('Acc: {:.4f}'.format(acc_p))
             if phase == 'train':
                 scheduler.step()
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
-            torch.save(model.state_dict(), "checkpoints/epoch{:d}.pth".format(epoch))
+            
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
@@ -105,6 +111,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+                torch.save(model.state_dict(), "checkpoints/epoch{:d}.pth".format(epoch))
 
         
 
@@ -134,14 +141,14 @@ optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
 
-model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
-# def run():
-#     torch.multiprocessing.freeze_support()
-#     print('loop')
+# model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+                    #    num_epochs=25)
+def run():
+    torch.multiprocessing.freeze_support()
+    print('loop')
 
-# if __name__ == '__main__':
-#     run()
-#     model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-#                        num_epochs=25)
+if __name__ == '__main__':
+    run()
+    model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+                       num_epochs=25)
     
