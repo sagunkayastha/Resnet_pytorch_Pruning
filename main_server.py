@@ -12,23 +12,28 @@ import time
 import os
 import copy
 import sys
+import pickle
 # plt.ion()   # interactive mode
 
 # Just normalization for validation
-Resume =  False
+Resume = False
+num_epochs = 25
+lr = 0.001
+batch_size = 64
+
 
 data_transforms = {
     'train': transforms.Compose([
         transforms.RandomResizedCrop(28),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]),
     'val': transforms.Compose([
         transforms.Resize(28),
         transforms.CenterCrop(28),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]),
 }
 
@@ -36,7 +41,7 @@ data_dir = '../dataset2/'
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x])
                   for x in ['train', 'val']}
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=32,
+dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size,
                                              shuffle=True, num_workers=4)
               for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -46,13 +51,14 @@ class_names = image_datasets['train'].classes
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+def train_model(model, criterion, optimizer, scheduler, num_epochs=25,ep=0,best_acc=0):
     since = time.time()
-
+    
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
     for epoch in range(num_epochs):
+        epoch=ep
         print('Epoch {}/{}'.format(epoch+1, num_epochs - 1))
         print('-' * 10)
 
@@ -100,15 +106,16 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                     
                     sys.stdout.write("Accuracy in epoch : %d - Step : %d , loss = %f , Accuracu = %f \r" % (epoch+1, i, step_loss[0], step_accuracy) )
                     sys.stdout.flush()
-                    # print("{} : {} - loss: {}, acc: {}".format(
-                    #         epoch+1, 
-                    #         i,
-                    #         float(running_loss) / float(samples), 
-                    #         float(running_corrects) / float(samples)
-                    #     ))
+                    
                     
                 i+=1
 
+            Obj_to_save = {'epoch' : epoch, 'best_acc' : best_acc, 'lr': lr }
+            f = open('params.pkl', 'w')   # Pickle file is newly created where foo1.py is
+            pickle.dump(Obj_to_save, f)          # dump data to f
+            f.close()                 
+            
+            
             if phase == 'train':
                 scheduler.step()
 
@@ -139,28 +146,42 @@ num_ftrs = model_ft.fc.in_features
 # Here the size of each output sample is set to 2.
 # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
 
-model_ft.fc = torch.nn.Linear(num_ftrs,31)
-if Resume == True:
-    model_ft.load_state_dict(torch.load("checkpoints/epoch48.pth"))
+model_ft.fc =    torch.nn.Linear(
+        in_features=num_ftrs,
+        out_features=31
+    )
+
+
+    
 model_ft = model_ft.cuda()
 
 criterion = nn.CrossEntropyLoss()
 
+if Resume == True:
+    model_ft.load_state_dict(torch.load("checkpoints/ckpt.pth"))
+    
+    f = open('params.pkl', 'rb')   # 'r' for reading; can be omitted
+    config = pickle.load(f)         # load file content as mydict
+    print(config)
+    f.close() 
+else:
+    config = {'epoch' : 0, 'best_acc' : 0, 'lr': 0.001 }
+
 # Observe that all parameters are being optimized
-optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.001)
+optimizer_ft = optim.Adam(model_ft.parameters(), lr=lr)
 
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
 
-model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=50)
+# model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+#                        num_epochs=50,ep=config['epoch'],best_acc=config['best_acc'])
 
-# def run():
-#     torch.multiprocessing.freeze_support()
-#     print('loop')
+def run():
+    torch.multiprocessing.freeze_support()
+    print('loop')
 
-# if __name__ == '__main__':
-#     run()
-#     model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-#                        num_epochs=25)
+if __name__ == '__main__':
+    run()
+    model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+                       num_epochs=25,ep=config['epoch'],best_acc=config['best_acc'])
     
