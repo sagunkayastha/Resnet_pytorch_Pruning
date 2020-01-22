@@ -53,7 +53,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
-        i=0
+
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -63,47 +63,56 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             running_loss = 0.0
             running_corrects = 0
-
+            samples=0
+            i=0
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
                 
-                i=i+1
-                                            
                 inputs = inputs.cuda()
                 labels = labels.cuda()
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
-
+					
                 # forward
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
-                    
+
                     # backward + optimize only if in training phase
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
-                        
+
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
+                samples += inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
-                if i%10 == 0:
-                    # print(i)
-                    acc_p = torch.sum(preds == labels.data).double() / 64
-                    sys.stdout.write("Accuracy in epoch : %d - Step : %d  is = %f  \r" % (epoch, i, acc_p) )
-                    sys.stdout.flush()
+                
+                if i%10 ==0:
+                    step_loss=float(running_loss) / float(samples), 
+                    step_accuracy=float(running_corrects) / float(samples)
                     
-                    # print('Acc: {:.4f}'.format(acc_p))
+                    sys.stdout.write("Accuracy in epoch : %d - Step : %d , loss = %f , Accuracu = %f \r" % (epoch+1, i, step_loss[0], step_accuracy) )
+                    sys.stdout.flush()
+                    # print("{} : {} - loss: {}, acc: {}".format(
+                    #         epoch+1, 
+                    #         i,
+                    #         float(running_loss) / float(samples), 
+                    #         float(running_corrects) / float(samples)
+                    #     ))
+                    
+                i+=1
+
             if phase == 'train':
                 scheduler.step()
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
-            print(' ')
+
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
@@ -111,10 +120,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(model.state_dict(), "checkpoints/epoch{:d}.pth".format(epoch))
+                torch.save(best_model_wts, "checkpoints/epoch{:d}.pth".format(epoch))
 
         
-
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
@@ -125,26 +133,30 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     return model
 
 model_ft = models.resnet50(pretrained=False)
-num_ftrs = model_ft.fc.in_features
+# num_ftrs = model_ft.fc.in_features
 # Here the size of each output sample is set to 2.
 # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-model_ft.fc = nn.Linear(num_ftrs, 31)
 
-model_ft.load_state_dict(torch.load("checkpoints/epoch8.pth"))
-print('model_loaded')
+model_ft.fc = torch.nn.Sequential(
+    torch.nn.Linear(
+        in_features=2048,
+        out_features=31
+    ),
+    torch.nn.Sigmoid())
+
 model_ft = model_ft.cuda()
 
 criterion = nn.CrossEntropyLoss()
 
 # Observe that all parameters are being optimized
-optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.0001, momentum=0.9)
+optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
 
 # Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=5, gamma=0.5)
-
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
 model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
                        num_epochs=25)
+
 # def run():
 #     torch.multiprocessing.freeze_support()
 #     print('loop')

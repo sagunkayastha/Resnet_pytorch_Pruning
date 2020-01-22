@@ -119,8 +119,13 @@ model_ft = models.resnet50(pretrained=False)
 num_ftrs = model_ft.fc.in_features
 # Here the size of each output sample is set to 2.
 # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-model_ft.fc = nn.Linear(num_ftrs, 31)
 
+model_ft.fc = torch.nn.Sequential(
+    torch.nn.Linear(
+        in_features=2048,
+        out_features=31
+    ),
+    torch.nn.Sigmoid()
 model_ft = model_ft.cuda()
 
 criterion = nn.CrossEntropyLoss()
