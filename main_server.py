@@ -15,7 +15,7 @@ import sys
 # plt.ion()   # interactive mode
 
 # Just normalization for validation
-Resume = False
+Resume =  False
 
 data_transforms = {
     'train': transforms.Compose([
@@ -36,7 +36,7 @@ data_dir = '../dataset2/'
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x])
                   for x in ['train', 'val']}
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=64,
+dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=32,
                                              shuffle=True, num_workers=4)
               for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -122,7 +122,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(best_model_wts, "checkpoints/epoch{:d}.pth".format(epoch))
+                torch.save(best_model_wts, "checkpoints/ckpt.pth")
 
         
     time_elapsed = time.time() - since
@@ -135,19 +135,13 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     return model
 
 model_ft = models.resnet50(pretrained=False)
-# num_ftrs = model_ft.fc.in_features
+num_ftrs = model_ft.fc.in_features
 # Here the size of each output sample is set to 2.
 # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
 
-model_ft.fc = torch.nn.Sequential(
-    torch.nn.Linear(
-        in_features=2048,
-        out_features=31
-    ),
-    torch.nn.Sigmoid())
-
+model_ft.fc = torch.nn.Linear(num_ftrs,31)
 if Resume == True:
-    model_ft.load_state_dict(torch.load(PATH))
+    model_ft.load_state_dict(torch.load("checkpoints/epoch48.pth"))
 model_ft = model_ft.cuda()
 
 criterion = nn.CrossEntropyLoss()
@@ -156,7 +150,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.001)
 
 # Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
 
 model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
                        num_epochs=50)
