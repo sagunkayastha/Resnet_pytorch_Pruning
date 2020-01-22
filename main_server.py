@@ -15,6 +15,8 @@ import sys
 # plt.ion()   # interactive mode
 
 # Just normalization for validation
+Resume = False
+
 data_transforms = {
     'train': transforms.Compose([
         transforms.RandomResizedCrop(28),
@@ -112,7 +114,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
-
+            
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
@@ -144,6 +146,8 @@ model_ft.fc = torch.nn.Sequential(
     ),
     torch.nn.Sigmoid())
 
+if Resume == True:
+    model_ft.load_state_dict(torch.load(PATH))
 model_ft = model_ft.cuda()
 
 criterion = nn.CrossEntropyLoss()
