@@ -192,12 +192,13 @@ def validate(args, test_loader, model, device, criterion, epoch, train_writer=No
     end = time.time()
     with torch.no_grad():
         for data_test in test_loader:
+            
             data, target = data_test
 
             data = data.to(device)
 
             output = model(data)
-
+            
             if args.get_inference_time:
                 iterations_get_inference_time = 100
                 start_get_inference_time = time.time()
@@ -213,7 +214,7 @@ def validate(args, test_loader, model, device, criterion, epoch, train_writer=No
             losses.update(loss.item(), data.size(0))
             top1.update(prec1.item(), data.size(0))
             top5.update(prec5.item(), data.size(0))
-
+            
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
@@ -541,7 +542,7 @@ def main():
 
         if args.augment:
             transform_train = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
+                transforms.CenterCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
@@ -565,7 +566,7 @@ def main():
         train_dataset = datasets.ImageFolder(
         traindir,
          transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
+                transforms.CenterCrop(32),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
@@ -577,7 +578,7 @@ def main():
         test_loader = torch.utils.data.DataLoader(
             datasets.ImageFolder(valdir,
             transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
+                transforms.CenterCrop(32),
                 transforms.ToTensor(),
                 normalize,
             ])),batch_size=args.batch_size, shuffle=False, **kwargs)
@@ -629,7 +630,7 @@ def main():
         test_loader = torch.utils.data.DataLoader(
             datasets.ImageFolder(valdir,
             transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
+                
                 transforms.ToTensor(),
                 normalize,
             ])),batch_size=args.batch_size, shuffle=False, **kwargs)
@@ -812,7 +813,7 @@ def main():
 
         # evaluate on validation set
         prec1, _ = validate(args, test_loader, model, device, criterion, epoch, train_writer=train_writer)
-
+        
         # remember best prec@1 and save checkpoint
         is_best = prec1 > best_prec1
         best_prec1 = max(prec1, best_prec1)
@@ -824,6 +825,7 @@ def main():
                 'state_dict': model_state_dict,
                 'best_prec1': best_prec1,
             }, is_best, filename=model_save_path)
+            torch.save(model_state_dict, "checkpoints/ckpt.pth")
 
 
 if __name__ == '__main__':

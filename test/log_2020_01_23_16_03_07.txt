@@ -1,2 +1,0 @@
-main.py --dataset=rtvtr --model=resnet50 --data=../dataset2/ --pruning-method=22 --batch=32 --pruning_config=./configs/imagenet_resnet50_prune72.json
-learning rate adjusted: 0.01 1

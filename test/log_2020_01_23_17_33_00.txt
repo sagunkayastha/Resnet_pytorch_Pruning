@@ -1,4 +1,0 @@
-main.py --dataset=rtvtr --model=resnet50 --data=../dataset2/ --pruning-method=22 --batch=32 --pruning_config=./configs/imagenet_resnet50_prune72.json
-learning rate adjusted: 0.01 1
-Epoch: [1][0/3075]	Time 19.976 (19.976)	Loss 7.7931 (7.7931)	Prec@1 0.000 (0.000)	Prec@5 0.000 (0.000)
-Epoch: [1][10/3075]	Time 1.722 (2.845)	Loss 7.7260 (7.7223)	Prec@1 0.000 (0.000)	Prec@5 0.000 (0.000)
