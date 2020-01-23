@@ -17,9 +17,9 @@ import pickle
 
 # Just normalization for validation
 Resume = False
-num_epochs = 25
+num_epochs = 10
 lr = 0.001
-batch_size = 64
+batch_size = 32
 
 
 data_transforms = {
@@ -111,7 +111,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25,ep=0,best_
                 i+=1
 
             Obj_to_save = {'epoch' : epoch, 'best_acc' : best_acc, 'lr': lr }
-            f = open('params.pkl', 'w')   # Pickle file is newly created where foo1.py is
+            f = open('params.pkl', 'wb')   # Pickle file is newly created where foo1.py is
             pickle.dump(Obj_to_save, f)          # dump data to f
             f.close()                 
             
