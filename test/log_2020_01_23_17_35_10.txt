@@ -1,0 +1,2 @@
+main.py --dataset=rtvtr --model=resnet50 --data=../dataset2/ --pruning-method=22 --batch=32 --pruning_config=./configs/imagenet_resnet50_prune72.json --lr-decay-every=10 --momentum=0.9 --epochs=25 --load_model=./models//pretrained/ckpt.pth
+=> loading checkpoint './models//pretrained/ckpt.pth'

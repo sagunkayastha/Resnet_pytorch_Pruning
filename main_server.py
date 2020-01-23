@@ -57,8 +57,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25,ep=0,best_
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    for epoch in range(num_epochs):
-        epoch=ep
+    for epoch in range(ep,num_epochs):
+        
         print('Epoch {}/{}'.format(epoch+1, num_epochs - 1))
         print('-' * 10)
 
