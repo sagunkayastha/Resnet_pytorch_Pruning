@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 import torch.backends.cudnn as cudnn
-
+import logging
 # ++++++for pruning
 import os, sys
 import time
@@ -38,6 +38,7 @@ import numpy as np
 # code is based on Pytorch example for imagenet
 # https://github.com/pytorch/examples/tree/master/imagenet
 
+logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',level=logging.DEBUG)
 
 def str2bool(v):
     # from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse/43357954#43357954
@@ -126,6 +127,13 @@ def train(args, model, device, train_loader, optimizer, epoch, criterion, train_
 
         if batch_idx % args.log_interval == 0:
             print('Epoch: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                  'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                      epoch, batch_idx, len(train_loader), batch_time=batch_time,
+                      loss=losses, top1=top1, top5=top5))
+            logging.info('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
